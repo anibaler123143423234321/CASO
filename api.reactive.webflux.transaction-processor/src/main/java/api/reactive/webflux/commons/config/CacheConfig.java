@@ -1,4 +1,4 @@
-package api.reactive.webflux.config;
+package api.reactive.webflux.commons.config;
 
 import com.github.benmanes.caffeine.cache.Caffeine;
 import org.springframework.cache.CacheManager;

@@ -6,9 +6,10 @@ import org.springframework.context.annotation.Bean;
 import reactor.core.publisher.Mono;
 import java.util.function.Function;
 import java.util.Map;
-import api.reactive.webflux.dto.PaymentRequest;
-import api.reactive.webflux.dto.PaymentResponse;
-import api.reactive.webflux.service.PaymentService;
+import api.reactive.webflux.processor.qr.dto.PaymentRequest;
+import api.reactive.webflux.processor.qr.dto.PaymentResponse;
+import api.reactive.webflux.processor.qr.service.PaymentService;
+import api.reactive.webflux.processor.qr.dto.AccountBalanceResponse;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -45,7 +46,7 @@ public class Application {
 	}
 
 	@Bean(name = "getAccountBalance")
-	public Function<Map<String, Object>, Mono<api.reactive.webflux.dto.AccountBalanceResponse>> getAccountBalance(PaymentService service) {
+	public Function<Map<String, Object>, Mono<AccountBalanceResponse>> getAccountBalance(PaymentService service) {
 		return map -> {
 			try {
 				// Extraer ID de pathParameters de API Gateway

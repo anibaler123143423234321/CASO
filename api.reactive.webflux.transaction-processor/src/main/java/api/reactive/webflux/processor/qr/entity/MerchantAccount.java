@@ -1,4 +1,4 @@
-package api.reactive.webflux.entity;
+package api.reactive.webflux.processor.qr.entity;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -7,7 +7,6 @@ import lombok.NoArgsConstructor;
 import software.amazon.awssdk.enhanced.dynamodb.mapper.annotations.DynamoDbBean;
 import software.amazon.awssdk.enhanced.dynamodb.mapper.annotations.DynamoDbPartitionKey;
 import software.amazon.awssdk.enhanced.dynamodb.mapper.annotations.DynamoDbAttribute;
-import software.amazon.awssdk.enhanced.dynamodb.mapper.annotations.DynamoDbIgnoreNulls;
 
 import java.math.BigDecimal;
 
@@ -16,16 +15,16 @@ import java.math.BigDecimal;
 @NoArgsConstructor
 @AllArgsConstructor
 @DynamoDbBean
-public class UserAccount {
+public class MerchantAccount {
 
-    private String userId;
+    private String merchantId;
     private BigDecimal balance;
     private Long version;
 
     @DynamoDbPartitionKey
-    @DynamoDbAttribute("userId")
-    public String getUserId() {
-        return userId;
+    @DynamoDbAttribute("merchantId")
+    public String getMerchantId() {
+        return merchantId;
     }
 
     @DynamoDbAttribute("balance")

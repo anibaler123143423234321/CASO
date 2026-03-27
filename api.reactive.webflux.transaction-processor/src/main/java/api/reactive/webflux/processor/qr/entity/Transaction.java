@@ -1,4 +1,4 @@
-package api.reactive.webflux.entity;
+package api.reactive.webflux.processor.qr.entity;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;

@@ -1,4 +1,4 @@
-package api.reactive.webflux.dto;
+package api.reactive.webflux.processor.qr.dto;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;

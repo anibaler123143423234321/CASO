@@ -70,7 +70,6 @@ const App: React.FC = () => {
   };
 
   const handleFetchMerchantBalance = async (val: string) => {
-    setMerchantId(val);
     if (!val) return;
     
     const res = await fetchBalance(val);

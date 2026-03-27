@@ -1,4 +1,4 @@
-package api.reactive.webflux.messaging;
+package api.reactive.webflux.processor.qr.messaging;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;

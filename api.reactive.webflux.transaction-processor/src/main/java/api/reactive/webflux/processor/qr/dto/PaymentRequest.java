@@ -1,4 +1,4 @@
-package api.reactive.webflux.dto;
+package api.reactive.webflux.processor.qr.dto;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.validation.constraints.DecimalMin;

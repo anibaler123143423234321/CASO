@@ -1,4 +1,4 @@
-package api.reactive.webflux.config;
+package api.reactive.webflux.commons.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;

@@ -1,5 +1,9 @@
-package api.reactive.webflux.api.handler;
+package api.reactive.webflux.processor.qr.api;
 
+import api.reactive.webflux.processor.qr.dto.AccountBalanceResponse;
+import api.reactive.webflux.processor.qr.dto.PaymentRequest;
+import api.reactive.webflux.processor.qr.dto.PaymentResponse;
+import api.reactive.webflux.processor.qr.service.PaymentService;
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.Validator;
 import lombok.RequiredArgsConstructor;
@@ -9,11 +13,6 @@ import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.server.ServerRequest;
 import org.springframework.web.reactive.function.server.ServerResponse;
-import api.reactive.webflux.entity.Transaction;
-import api.reactive.webflux.dto.PaymentRequest;
-import api.reactive.webflux.dto.PaymentResponse;
-import api.reactive.webflux.dto.AccountBalanceResponse;
-import api.reactive.webflux.service.PaymentService;
 import reactor.core.publisher.Mono;
 
 import java.time.LocalDateTime;
