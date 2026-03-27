@@ -1,0 +1,10 @@
+node_modules/
+.serverless/
+target/
+*.log
+.env
+.DS_Store
+.idea/
+.vscode/
+*.zip
+*.jar

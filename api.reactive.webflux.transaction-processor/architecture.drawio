@@ -1,0 +1,121 @@
+<mxfile host="Electron" modified="2026-03-26T17:28:00.000Z" agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36" etag="qP_Qx9zBvL7J3D" version="21.6.8" type="device">
+  <diagram id="PRQ4T9sOQ_tqS8c-" name="Architecture">
+    <mxGraphModel dx="1434" dy="836" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1169" pageHeight="827" background="#ffffff" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        
+        <!-- AWS Cloud Border -->
+        <mxCell id="aws_border" value="AWS Cloud / Infraestructura Productiva" style="swimlane;whiteSpace=wrap;html=1;startSize=23;dashed=1;dashPattern=1 2;fillColor=none;strokeColor=#FF9900;fontColor=#000000;fontStyle=1" vertex="1" parent="1">
+          <mxGeometry x="160" y="40" width="880" height="560" as="geometry" />
+        </mxCell>
+
+        <!-- Components -->
+        <!-- Client -->
+        <mxCell id="client" value="Client App&#xa;(Mobile/Web)" style="ellipse;shape=cloud;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+          <mxGeometry x="10" y="240" width="120" height="80" as="geometry" />
+        </mxCell>
+
+        <!-- Route53 / API GW -->
+        <mxCell id="api_gw" value="Amazon API Gateway / WAF&#xa;(Rate Limiting, DDoS Protection)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;fontStyle=1" vertex="1" parent="aws_border">
+          <mxGeometry x="40" y="200" width="160" height="80" as="geometry" />
+        </mxCell>
+
+        <!-- Load Balancer -->
+        <mxCell id="alb" value="Application Load Balancer" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;" vertex="1" parent="aws_border">
+          <mxGeometry x="250" y="210" width="120" height="60" as="geometry" />
+        </mxCell>
+
+        <!-- EKS Payment Service (Sync/Ingress) -->
+        <mxCell id="payment_service" value="Spring WebFlux API&#xa;Payment Service&#xa;(Ingress)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontStyle=1" vertex="1" parent="aws_border">
+          <mxGeometry x="420" y="200" width="140" height="80" as="geometry" />
+        </mxCell>
+
+        <!-- Redis Cache -->
+        <mxCell id="redis" value="Redis Cache&#xa;(Idempotency Check)" style="shape=cylinder3;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;size=15;fillColor=#f8cecc;strokeColor=#b85450;fontStyle=1" vertex="1" parent="aws_border">
+          <mxGeometry x="440" y="40" width="100" height="80" as="geometry" />
+        </mxCell>
+
+        <!-- Queue (Kafka / RabbitMQ) -->
+        <mxCell id="queue" value="Message Broker&#xa;(Apache Kafka / RabbitMQ)&#xa;Payment Events" style="shape=parallelogram;perimeter=parallelogramPerimeter;whiteSpace=wrap;html=1;fixedSize=1;fillColor=#fff2cc;strokeColor=#d6b656;fontStyle=1" vertex="1" parent="aws_border">
+          <mxGeometry x="400" y="360" width="180" height="60" as="geometry" />
+        </mxCell>
+
+        <!-- Worker Processor (Async) -->
+        <mxCell id="worker" value="Payment Processor Worker&#xa;(Async Consumer)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontStyle=1" vertex="1" parent="aws_border">
+          <mxGeometry x="660" y="350" width="160" height="80" as="geometry" />
+        </mxCell>
+
+        <!-- PostgreSQL DB -->
+        <mxCell id="db_master" value="PostgreSQL DB&#xa;(Master)&#xa;Transactions &amp; Accounts" style="shape=cylinder3;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;size=15;fillColor=#dae8fc;strokeColor=#6c8ebf;fontStyle=1" vertex="1" parent="aws_border">
+          <mxGeometry x="690" y="180" width="100" height="100" as="geometry" />
+        </mxCell>
+
+        <!-- DB Read Replica -->
+        <mxCell id="db_read" value="PostgreSQL DB&#xa;(Read Replica)" style="shape=cylinder3;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;size=15;fillColor=#dae8fc;strokeColor=#6c8ebf;dashed=1" vertex="1" parent="aws_border">
+          <mxGeometry x="690" y="40" width="100" height="100" as="geometry" />
+        </mxCell>
+
+        <!-- Edges -->
+        <!-- Client -> API GW -->
+        <mxCell id="edge1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="1" source="client" target="api_gw">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- API GW -> ALB -->
+        <mxCell id="edge2" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="aws_border" source="api_gw" target="alb">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- ALB -> Payment Service -->
+        <mxCell id="edge3" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="aws_border" source="alb" target="payment_service">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- Payment Service <-> Redis -->
+        <mxCell id="edge4" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0.5;entryY=1;entryDx=0;entryDy=0;entryPerimeter=0;startArrow=classic;startFill=1;" edge="1" parent="aws_border" source="payment_service" target="redis">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+
+        <!-- Payment Service -> Queue -->
+        <mxCell id="edge5" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="aws_border" source="payment_service" target="queue">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+
+        <!-- Queue -> Worker -->
+        <mxCell id="edge6" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="aws_border" source="queue" target="worker">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- Worker -> DB Master -->
+        <mxCell id="edge7" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0.5;entryY=1;entryDx=0;entryDy=0;entryPerimeter=0;startArrow=classic;startFill=1;" edge="1" parent="aws_border" source="worker" target="db_master">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- DB Master -> Read Replica (Replication) -->
+        <mxCell id="edge8" value="Async Replication" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0.5;entryY=1;entryDx=0;entryDy=0;entryPerimeter=0;dashed=1;" edge="1" parent="aws_border" source="db_master" target="db_read">
+          <mxGeometry x="0.5" y="-10" relative="1" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+
+        <!-- Payment Service -> DB Read (Validation) -->
+        <mxCell id="edge9" value="Read (Balance check)" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0;entryY=0.5;entryDx=0;entryDy=0;entryPerimeter=0;dashed=1;" edge="1" parent="aws_border" source="payment_service" target="db_read">
+          <mxGeometry y="10" relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="490" y="160" />
+              <mxPoint x="640" y="160" />
+              <mxPoint x="640" y="90" />
+            </Array>
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

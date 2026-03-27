@@ -1,0 +1,55 @@
+server:
+  port: 8083
+
+spring:
+  application:
+    name: transaction-processor
+  cache:
+    type: caffeine
+    caffeine:
+      spec: maximumSize=1000,expireAfterWrite=600s
+
+###############################################
+# SQS Configuration
+###############################################
+app:
+  sqs:
+    queue-url: https://sqs.us-east-1.amazonaws.com/176322300810/transaction-processor-queue-dev
+
+###############################################
+# Resilience4j
+###############################################
+resilience4j:
+
+  circuitbreaker:
+    instances:
+      paymentService:
+        failure-rate-threshold: 50
+        minimum-number-of-calls: 5
+        sliding-window-size: 10
+        wait-duration-in-open-state: 10s
+        permitted-number-of-calls-in-half-open-state: 3
+
+  retry:
+    instances:
+      paymentService:
+        max-attempts: 3
+        wait-duration: 500ms
+        retry-exceptions:
+          - software.amazon.awssdk.core.exception.SdkServiceException
+        ignore-exceptions:
+          - java.util.concurrent.TimeoutException
+
+  timelimiter:
+    instances:
+      paymentService:
+        timeout-duration: 5s
+
+###############################################
+# Logging
+###############################################
+logging:
+  level:
+    software.amazon.awssdk: INFO
+    io.github.resilience4j: DEBUG
+    api.reactive.webflux: DEBUG
