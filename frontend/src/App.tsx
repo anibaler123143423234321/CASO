@@ -10,11 +10,23 @@ const App: React.FC = () => {
   const [paymentId, setPaymentId] = useState('');
   
   // MOCK BALANCES (Initial 100M)
-  const [userBalance, setUserBalance] = useState(100000000.00);
-  const [merchantBalance, setMerchantBalance] = useState(0.00);
+  const [userBalance, setUserBalance] = useState<number>(() => {
+    const saved = localStorage.getItem('user_balance');
+    return saved ? parseFloat(saved) : 100000000.00;
+  });
+  const [merchantBalance, setMerchantBalance] = useState<number>(() => {
+    const saved = localStorage.getItem('merchant_balance');
+    return saved ? parseFloat(saved) : 0.00;
+  });
   
   const [userId, setUserId] = useState('USER-001');
   const [merchantId, setMerchantId] = useState('MERCHANT-001');
+
+  // Persist balances whenever they change
+  useEffect(() => {
+    localStorage.setItem('user_balance', userBalance.toString());
+    localStorage.setItem('merchant_balance', merchantBalance.toString());
+  }, [userBalance, merchantBalance]);
 
   // Generate a random payment ID on mount or reset
   const generateId = () => {
@@ -25,23 +37,22 @@ const App: React.FC = () => {
   useEffect(() => {
     const initBalances = async () => {
       const uRes = await fetchBalance(userId);
-      if (uRes) setUserBalance(uRes.balance);
+      if (uRes && typeof uRes.balance === 'number') setUserBalance(uRes.balance);
       
       const mRes = await fetchBalance(merchantId);
-      if (mRes) setMerchantBalance(mRes.balance);
+      if (mRes && typeof mRes.balance === 'number') setMerchantBalance(mRes.balance);
     };
     initBalances();
-  }, []);
+  }, [fetchBalance]);
 
   useEffect(() => {
     generateId();
     
-    // Update balances if payment was successful
     if (status && status.status === 'EXITO') {
       const amount = parseFloat(localStorage.getItem('last_processed_amount') || '0');
       if (amount > 0) {
-        setUserBalance(prev => prev - amount);
-        setMerchantBalance(prev => prev + amount);
+        setUserBalance(prev => (prev || 0) - amount);
+        setMerchantBalance(prev => (prev || 0) + amount);
         localStorage.removeItem('last_processed_amount');
       }
     }
@@ -49,14 +60,23 @@ const App: React.FC = () => {
 
   const handleFetchUserBalance = async (val: string) => {
     setUserId(val);
+    if (!val) return;
+    
     const res = await fetchBalance(val);
-    if (res) setUserBalance(res.balance);
+    if (res && typeof res.balance === 'number') {
+      setUserBalance(res.balance);
+    }
+    // Si falla, mantenemos el saldo actual (simulado)
   };
 
   const handleFetchMerchantBalance = async (val: string) => {
     setMerchantId(val);
+    if (!val) return;
+    
     const res = await fetchBalance(val);
-    if (res) setMerchantBalance(res.balance);
+    if (res && typeof res.balance === 'number') {
+      setMerchantBalance(res.balance);
+    }
   };
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
@@ -98,12 +118,12 @@ const App: React.FC = () => {
         <div className="glass p-6 rounded-[32px] border border-white/5 relative overflow-hidden group hover:border-indigo-500/30 transition-all">
           <div className="absolute top-0 right-0 w-16 h-16 bg-indigo-500/10 blur-2xl rounded-full -mr-8 -mt-8 group-hover:bg-indigo-500/20 transition-all"></div>
           <p className="text-[10px] text-slate-400 uppercase tracking-widest font-bold mb-1">Tu Saldo Principal</p>
-          <p className="text-2xl font-black text-white tracking-tight">S/ {userBalance.toLocaleString('es-PE', { minimumFractionDigits: 2 })}</p>
+          <p className="text-2xl font-black text-white tracking-tight">S/ {(userBalance || 0).toLocaleString('es-PE', { minimumFractionDigits: 2 })}</p>
         </div>
         <div className="glass p-6 rounded-[32px] border border-white/5 relative overflow-hidden group hover:border-purple-500/30 transition-all">
           <div className="absolute top-0 right-0 w-16 h-16 bg-purple-500/10 blur-2xl rounded-full -mr-8 -mt-8 group-hover:bg-purple-500/20 transition-all"></div>
           <p className="text-[10px] text-slate-400 uppercase tracking-widest font-bold mb-1">Recaudación Comercio</p>
-          <p className="text-2xl font-black text-indigo-400 tracking-tight">S/ {merchantBalance.toLocaleString('es-PE', { minimumFractionDigits: 2 })}</p>
+          <p className="text-2xl font-black text-indigo-400 tracking-tight">S/ {(merchantBalance || 0).toLocaleString('es-PE', { minimumFractionDigits: 2 })}</p>
         </div>
       </motion.div>
 

@@ -43,14 +43,23 @@ package:
   artifact: target/transaction-processor-lambda-lambda-zip.zip
 
 functions:
-  api:
+  payment:
     handler: org.springframework.cloud.function.adapter.aws.FunctionInvoker
     environment:
       JAVA_TOOL_OPTIONS: -XX:+TieredCompilation -XX:TieredStopAtLevel=1
       SPRING_CLOUD_FUNCTION_DEFINITION: handlePayment
       MAIN_CLASS: api.reactive.webflux.Application
     events:
-      - httpApi: '*'
+      - httpApi: 'POST /payment'
+
+  getAccountBalance:
+    handler: org.springframework.cloud.function.adapter.aws.FunctionInvoker
+    environment:
+      JAVA_TOOL_OPTIONS: -XX:+TieredCompilation -XX:TieredStopAtLevel=1
+      SPRING_CLOUD_FUNCTION_DEFINITION: getAccountBalance
+      MAIN_CLASS: api.reactive.webflux.Application
+    events:
+      - httpApi: 'GET /accounts/{id}'
 
 resources:
   Resources:
