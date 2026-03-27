@@ -12,6 +12,7 @@ import org.springframework.web.reactive.function.server.ServerResponse;
 import api.reactive.webflux.entity.Transaction;
 import api.reactive.webflux.dto.PaymentRequest;
 import api.reactive.webflux.dto.PaymentResponse;
+import api.reactive.webflux.dto.AccountBalanceResponse;
 import api.reactive.webflux.service.PaymentService;
 import reactor.core.publisher.Mono;
 
@@ -27,18 +28,36 @@ public class PaymentHandler {
     private final PaymentService paymentService;
     private final Validator validator;
 
+    public Mono<ServerResponse> getAccountBalance(ServerRequest request) {
+        String id = request.pathVariable("id");
+        return paymentService.getAccountBalance(id)
+                .flatMap(balance -> ServerResponse.ok()
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .bodyValue(balance))
+                .onErrorResume(ex -> {
+                    log.error("Error obteniendo saldo para id={}", id, ex);
+                    return ServerResponse.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .bodyValue(PaymentResponse.builder()
+                                    .status("ERROR")
+                                    .message("Error al obtener el saldo")
+                                    .timestamp(LocalDateTime.now())
+                                    .build());
+                });
+    }
+
     public Mono<ServerResponse> processPayment(ServerRequest request) {
         return request.bodyToMono(PaymentRequest.class)
                 .flatMap(this::validate)
                 .flatMap(paymentService::processPayment)
                 .flatMap(response -> {
-                    HttpStatus status = Transaction.STATUS_SUCCESS.equals(response.getStatus())
+                    HttpStatus status = "EXITO".equals(response.getStatus())
                             ? HttpStatus.OK
                             : HttpStatus.BAD_REQUEST;
 
-                    // SERVICE_UNAVAILABLE from fallback
-                    if ("SERVICE_UNAVAILABLE".equals(response.getStatus())) {
-                        status = HttpStatus.SERVICE_UNAVAILABLE;
+                    // FALLO from fallback or other
+                    if ("FALLO".equals(response.getStatus()) || "SALDO_INSUFICIENTE".equals(response.getStatus())) {
+                        status = HttpStatus.BAD_REQUEST;
                     }
 
                     return ServerResponse.status(status)

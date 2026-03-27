@@ -30,5 +30,9 @@ export const usePayment = () => {
 
   const resetStatus = useCallback(() => setStatus(null), []);
 
-  return { loading, status, executePayment, resetStatus };
+  const fetchBalance = useCallback(async (id: string) => {
+    return await paymentService.fetchBalance(id);
+  }, []);
+
+  return { loading, status, executePayment, resetStatus, fetchBalance };
 };

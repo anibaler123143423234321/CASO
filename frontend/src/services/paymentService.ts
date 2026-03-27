@@ -18,5 +18,14 @@ export const paymentService = {
       }
       throw new Error('No se pudo establecer conexión con el servidor.');
     }
+  },
+  fetchBalance: async (id: string): Promise<any> => {
+    try {
+      const { data } = await axios.get(`${API_BASE_URL}/accounts/${id}`);
+      return data;
+    } catch (error: any) {
+      console.error('Error fetching balance:', error);
+      return null;
+    }
   }
 };

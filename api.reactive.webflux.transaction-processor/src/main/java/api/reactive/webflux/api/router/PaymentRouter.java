@@ -8,6 +8,7 @@ import org.springframework.web.reactive.function.server.RouterFunctions;
 import org.springframework.web.reactive.function.server.ServerResponse;
 import api.reactive.webflux.api.handler.PaymentHandler;
 
+import static org.springframework.web.reactive.function.server.RequestPredicates.GET;
 import static org.springframework.web.reactive.function.server.RequestPredicates.POST;
 import static org.springframework.web.reactive.function.server.RequestPredicates.accept;
 
@@ -19,6 +20,10 @@ public class PaymentRouter {
         return RouterFunctions.route(
                 POST("/payment").and(accept(MediaType.APPLICATION_JSON)),
                 handler::processPayment
+        )
+        .andRoute(
+                GET("/accounts/{id}").and(accept(MediaType.APPLICATION_JSON)),
+                handler::getAccountBalance
         );
     }
 }

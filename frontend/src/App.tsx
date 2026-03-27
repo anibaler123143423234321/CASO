@@ -6,37 +6,111 @@ import { usePayment } from './hooks/usePayment';
 import { Loader2 } from 'lucide-react';
 
 const App: React.FC = () => {
-  const { loading, status, executePayment, resetStatus } = usePayment();
+  const { loading, status, executePayment, resetStatus, fetchBalance } = usePayment();
   const [paymentId, setPaymentId] = useState('');
+  
+  // MOCK BALANCES (Initial 100M)
+  const [userBalance, setUserBalance] = useState(100000000.00);
+  const [merchantBalance, setMerchantBalance] = useState(0.00);
+  
+  const [userId, setUserId] = useState('USER-001');
+  const [merchantId, setMerchantId] = useState('MERCHANT-001');
 
   // Generate a random payment ID on mount or reset
   const generateId = () => {
     setPaymentId(`PAY-${Math.random().toString(36).substring(2, 11).toUpperCase()}`);
   };
 
+  // Fetch initial balances on mount
+  useEffect(() => {
+    const initBalances = async () => {
+      const uRes = await fetchBalance(userId);
+      if (uRes) setUserBalance(uRes.balance);
+      
+      const mRes = await fetchBalance(merchantId);
+      if (mRes) setMerchantBalance(mRes.balance);
+    };
+    initBalances();
+  }, []);
+
   useEffect(() => {
     generateId();
+    
+    // Update balances if payment was successful
+    if (status && status.status === 'EXITO') {
+      const amount = parseFloat(localStorage.getItem('last_processed_amount') || '0');
+      if (amount > 0) {
+        setUserBalance(prev => prev - amount);
+        setMerchantBalance(prev => prev + amount);
+        localStorage.removeItem('last_processed_amount');
+      }
+    }
   }, [status]);
+
+  const handleFetchUserBalance = async (val: string) => {
+    setUserId(val);
+    const res = await fetchBalance(val);
+    if (res) setUserBalance(res.balance);
+  };
+
+  const handleFetchMerchantBalance = async (val: string) => {
+    setMerchantId(val);
+    const res = await fetchBalance(val);
+    if (res) setMerchantBalance(res.balance);
+  };
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
+    const amount = parseFloat(formData.get('amount') as string);
+    
+    // VALIDATION: Insufficient funds check (Local)
+    if (userBalance < amount) {
+      alert("Error: Saldo insuficiente para realizar esta operación.");
+      return;
+    }
+
+    if (amount <= 0) {
+      alert("Error: El monto debe ser mayor a 0.");
+      return;
+    }
+
+    // Store amount temporarily to update balance on success
+    localStorage.setItem('last_processed_amount', amount.toString());
     
     executePayment({
-      user_id: formData.get('userId') as string,
-      merchant_id: formData.get('merchantId') as string,
-      amount: parseFloat(formData.get('amount') as string),
+      user_id: userId,
+      merchant_id: merchantId,
+      amount: amount,
       currency: 'PEN',
       payment_id: paymentId
     });
   };
 
   return (
-    <div className="flex items-center justify-center p-4 min-h-screen">
+    <div className="flex flex-col items-center justify-center p-4 min-h-screen">
+      {/* Wallet Summary */}
       <motion.div 
-        initial={{ opacity: 0, y: 20 }}
+        initial={{ opacity: 0, scale: 0.95 }}
+        animate={{ opacity: 1, scale: 1 }}
+        className="w-full max-w-md mb-8 grid grid-cols-2 gap-4"
+      >
+        <div className="glass p-6 rounded-[32px] border border-white/5 relative overflow-hidden group hover:border-indigo-500/30 transition-all">
+          <div className="absolute top-0 right-0 w-16 h-16 bg-indigo-500/10 blur-2xl rounded-full -mr-8 -mt-8 group-hover:bg-indigo-500/20 transition-all"></div>
+          <p className="text-[10px] text-slate-400 uppercase tracking-widest font-bold mb-1">Tu Saldo Principal</p>
+          <p className="text-2xl font-black text-white tracking-tight">S/ {userBalance.toLocaleString('es-PE', { minimumFractionDigits: 2 })}</p>
+        </div>
+        <div className="glass p-6 rounded-[32px] border border-white/5 relative overflow-hidden group hover:border-purple-500/30 transition-all">
+          <div className="absolute top-0 right-0 w-16 h-16 bg-purple-500/10 blur-2xl rounded-full -mr-8 -mt-8 group-hover:bg-purple-500/20 transition-all"></div>
+          <p className="text-[10px] text-slate-400 uppercase tracking-widest font-bold mb-1">Recaudación Comercio</p>
+          <p className="text-2xl font-black text-indigo-400 tracking-tight">S/ {merchantBalance.toLocaleString('es-PE', { minimumFractionDigits: 2 })}</p>
+        </div>
+      </motion.div>
+
+      <motion.div 
+        initial={{ opacity: 0, y: 30 }}
         animate={{ opacity: 1, y: 0 }}
-        className="max-w-md w-full glass p-8 rounded-[48px] glow-border relative overflow-hidden"
+        className="max-w-md w-full glass p-8 rounded-[48px] glow-border relative overflow-hidden shadow-2xl"
       >
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-48 h-1 bg-gradient-to-r from-transparent via-indigo-500 to-transparent opacity-50"></div>
         
@@ -46,10 +120,10 @@ const App: React.FC = () => {
             animate={{ scale: 1 }}
             className="inline-block px-3 py-1 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 text-[10px] uppercase tracking-[0.2em] font-bold mb-3"
           >
-            Transaction Processor
+            Terminal Punto de Venta
           </motion.div>
-          <h1 className="text-4xl font-extrabold tracking-tight text-white mb-2">
-            Galaxy<span className="text-indigo-500">Pay</span>
+          <h1 className="text-4xl font-extrabold tracking-tighter text-white mb-2 italic">
+            GALAXY<span className="text-indigo-500">PAY</span>
           </h1>
           <div className="h-1 w-12 bg-indigo-500 mx-auto rounded-full"></div>
         </header>
@@ -57,53 +131,58 @@ const App: React.FC = () => {
         <Scanner />
 
         <form onSubmit={handleSubmit} className="space-y-6">
-          <div className="space-y-4">
+          <div className="space-y-5">
             <div className="group">
               <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-[0.15em] mb-2 ml-1">
-                Usuario de Pago
+                ID Usuario Solicitante
               </label>
               <input
-                name="userId"
-                defaultValue="USER-001"
+                value={userId}
+                onChange={(e) => setUserId(e.target.value)}
+                onBlur={(e) => handleFetchUserBalance(e.target.value)}
                 required
-                className="w-full bg-white/5 border border-white/5 rounded-2xl p-4 text-white placeholder:text-slate-500 focus:bg-indigo-500/5 focus:border-indigo-500/50 outline-none transition-all duration-300"
+                placeholder="Ej. USER-001"
+                className="w-full bg-white/5 border border-white/5 rounded-2xl p-4 text-white placeholder:text-slate-600 focus:bg-indigo-500/5 focus:border-indigo-500/50 outline-none transition-all duration-300 font-mono"
               />
             </div>
 
             <div className="group">
               <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-[0.15em] mb-2 ml-1">
-                Comercio Destino
+                ID Comercio Destino
               </label>
               <input
-                name="merchantId"
-                defaultValue="MERCHANT-001"
+                value={merchantId}
+                onChange={(e) => setMerchantId(e.target.value)}
+                onBlur={(e) => handleFetchMerchantBalance(e.target.value)}
                 required
-                className="w-full bg-white/5 border border-white/5 rounded-2xl p-4 text-white placeholder:text-slate-500 focus:bg-purple-500/5 focus:border-purple-500/50 outline-none transition-all duration-300"
+                placeholder="Ej. MERCHANT-001"
+                className="w-full bg-white/5 border border-white/5 rounded-2xl p-4 text-white placeholder:text-slate-600 focus:bg-purple-500/5 focus:border-purple-500/50 outline-none transition-all duration-300 font-mono"
               />
             </div>
 
             <div className="flex gap-4">
               <div className="flex-[2]">
                 <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-[0.15em] mb-2 ml-1">
-                  Monto
+                  Monto de Transacción
                 </label>
                 <div className="relative">
                   <span className="absolute left-4 top-1/2 -translate-y-1/2 text-indigo-400 font-bold">S/</span>
                   <input
                     name="amount"
                     type="number"
-                    defaultValue="100.00"
+                    defaultValue="10.00"
                     step="0.01"
+                    min="0.01"
                     required
-                    className="w-full bg-white/5 border border-white/5 rounded-2xl p-4 pl-10 text-white focus:bg-indigo-500/5 focus:border-indigo-500/50 outline-none transition-all duration-300"
+                    className="w-full bg-white/5 border border-white/5 rounded-2xl p-4 pl-10 text-white focus:bg-indigo-500/5 focus:border-indigo-500/50 outline-none transition-all duration-300 text-lg font-bold"
                   />
                 </div>
               </div>
               <div className="flex-1">
                 <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-[0.15em] mb-2 ml-1">
-                  Moneda
+                  Divisa
                 </label>
-                <div className="w-full bg-white/5 border border-white/5 rounded-2xl p-4 text-center text-slate-300 font-bold h-[58px] flex items-center justify-center">
+                <div className="w-full bg-white/5 border border-white/5 rounded-2xl p-4 text-center text-slate-300 font-black h-[61px] flex items-center justify-center tracking-widest">
                   PEN
                 </div>
               </div>
@@ -112,15 +191,16 @@ const App: React.FC = () => {
 
           <div className="pt-4">
             <motion.button
-              whileHover={{ scale: 1.02 }}
+              whileHover={{ scale: 1.02, boxShadow: '0 20px 40px -15px rgba(79,70,229,0.5)' }}
               whileTap={{ scale: 0.98 }}
               disabled={loading}
-              className="w-full relative flex items-center justify-center p-5 bg-indigo-600 rounded-3xl font-bold text-lg hover:bg-indigo-500 shadow-[0_10px_30px_-10px_rgba(79,70,229,0.5)] transition-all disabled:opacity-50 disabled:cursor-not-allowed overflow-hidden"
+              className="w-full relative flex items-center justify-center p-5 bg-gradient-to-br from-indigo-600 to-indigo-700 rounded-3xl font-black text-xl hover:from-indigo-500 hover:to-indigo-600 transition-all disabled:opacity-50 disabled:cursor-not-allowed overflow-hidden group shadow-xl"
             >
+              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></div>
               {loading ? (
                 <Loader2 className="animate-spin" />
               ) : (
-                "Confirmar Pago"
+                "EFECTUAR PAGO"
               )}
             </motion.button>
           </div>
@@ -128,9 +208,9 @@ const App: React.FC = () => {
 
         <StatusOverlay status={status} onClose={resetStatus} />
         
-        <footer className="mt-10 text-center opacity-40 hover:opacity-100 transition-opacity">
-          <p className="text-[9px] font-mono tracking-[0.2em]">
-            SYSTEM_UID: {paymentId}
+        <footer className="mt-10 text-center opacity-30 hover:opacity-100 transition-opacity">
+          <p className="text-[10px] font-mono tracking-[0.3em] font-bold">
+            TRX_SESSION: {paymentId}
           </p>
         </footer>
       </motion.div>

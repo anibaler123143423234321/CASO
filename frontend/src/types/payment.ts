@@ -8,7 +8,7 @@ export interface PaymentRequest {
 
 export interface PaymentResponse {
   payment_id: string;
-  status: 'SUCCESS' | 'FAILED' | 'INSUFFICIENT_FUNDS' | 'SERVICE_UNAVAILABLE' | 'VALIDATION_ERROR' | 'ERROR';
+  status: 'EXITO' | 'FALLO' | 'SALDO_INSUFICIENTE' | 'ERROR' | 'SERVICE_UNAVAILABLE';
   message: string;
   timestamp: string;
 }

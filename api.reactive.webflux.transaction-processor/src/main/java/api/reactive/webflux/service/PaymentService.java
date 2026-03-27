@@ -3,6 +3,7 @@ package api.reactive.webflux.service;
 import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import io.github.resilience4j.retry.annotation.Retry;
 import io.github.resilience4j.timelimiter.annotation.TimeLimiter;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.Cache;
 import org.springframework.cache.CacheManager;
@@ -10,6 +11,7 @@ import org.springframework.stereotype.Service;
 import api.reactive.webflux.entity.MerchantAccount;
 import api.reactive.webflux.entity.Transaction;
 import api.reactive.webflux.entity.UserAccount;
+import api.reactive.webflux.dto.AccountBalanceResponse;
 import api.reactive.webflux.dto.PaymentRequest;
 import api.reactive.webflux.dto.PaymentResponse;
 import api.reactive.webflux.messaging.MessageProducer;
@@ -24,6 +26,7 @@ import java.time.LocalDateTime;
 
 @Slf4j
 @Service
+@RequiredArgsConstructor
 public class PaymentService {
 
     private final DynamoDbAsyncTable<UserAccount> userTable;
@@ -133,6 +136,36 @@ public class PaymentService {
                 ).thenReturn(response));
     }
 
+    public Mono<AccountBalanceResponse> getAccountBalance(String id) {
+        log.info("Consultando saldo para id={}", id);
+        
+        // Especial para USER-001 si no está en DB
+        BigDecimal defaultUserBalance = "USER-001".equals(id) ? new BigDecimal("100000000") : BigDecimal.ZERO;
+
+        Key key = Key.builder().partitionValue(id).build();
+
+        return Mono.fromFuture(userTable.getItem(key))
+                .map(user -> AccountBalanceResponse.builder()
+                        .id(user.getUserId())
+                        .type("USER")
+                        .balance(user.getBalance())
+                        .currency("PEN")
+                        .build())
+                .switchIfEmpty(Mono.fromFuture(merchantTable.getItem(key))
+                        .map(merchant -> AccountBalanceResponse.builder()
+                                .id(merchant.getMerchantId())
+                                .type("MERCHANT")
+                                .balance(merchant.getBalance())
+                                .currency("PEN")
+                                .build()))
+                .switchIfEmpty(Mono.just(AccountBalanceResponse.builder()
+                        .id(id)
+                        .type(id.startsWith("MERCHANT") ? "MERCHANT" : "USER")
+                        .balance(defaultUserBalance)
+                        .currency("PEN")
+                        .build()));
+    }
+
     private void cacheResponse(String paymentId, PaymentResponse response) {
         if (transactionCache != null) {
             transactionCache.put(paymentId, response);
@@ -167,11 +200,11 @@ public class PaymentService {
     // Fallback para CircuitBreaker
     // =====================================================
     public Mono<PaymentResponse> paymentFallback(PaymentRequest request, Throwable ex) {
-        log.error("CircuitBreaker OPEN / Fallback activado para paymentId={}: {}",
+        log.error("CircuitBreaker ABIERTO / Fallback activado para paymentId={}: {}",
                 request.getPaymentId(), ex.getMessage());
         return Mono.just(PaymentResponse.builder()
                 .paymentId(request.getPaymentId())
-                .status("SERVICE_UNAVAILABLE")
+                .status("FALLO")
                 .message("Servicio temporalmente no disponible. Intente nuevamente más tarde.")
                 .timestamp(LocalDateTime.now())
                 .build());

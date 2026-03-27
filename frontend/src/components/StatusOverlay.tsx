@@ -16,15 +16,20 @@ export const StatusOverlay: React.FC<Props> = ({ status, onClose }) => {
   if (!status) return null;
 
   const config = {
-    SUCCESS: {
+    EXITO: {
       icon: <CheckCircle className="text-emerald-400" size={48} />,
       bg: 'bg-emerald-400/10',
       title: '¡Pago Exitoso!'
     },
-    INSUFFICIENT_FUNDS: {
+    SALDO_INSUFICIENTE: {
       icon: <AlertCircle className="text-amber-400" size={48} />,
       bg: 'bg-amber-400/10',
       title: 'Saldo Insuficiente'
+    },
+    FALLO: {
+      icon: <XCircle className="text-rose-400" size={48} />,
+      bg: 'bg-rose-400/10',
+      title: 'Error en el Pago'
     },
     SERVICE_UNAVAILABLE: {
       icon: <Info className="text-blue-400" size={48} />,
@@ -34,7 +39,7 @@ export const StatusOverlay: React.FC<Props> = ({ status, onClose }) => {
     default: {
       icon: <XCircle className="text-rose-400" size={48} />,
       bg: 'bg-rose-400/10',
-      title: 'Error en el Pago'
+      title: 'Error'
     }
   };
 

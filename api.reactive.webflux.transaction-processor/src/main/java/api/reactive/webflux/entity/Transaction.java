@@ -68,7 +68,7 @@ public class Transaction {
     }
 
     // Status constants
-    public static final String STATUS_SUCCESS = "SUCCESS";
-    public static final String STATUS_FAILED = "FAILED";
-    public static final String STATUS_INSUFFICIENT_FUNDS = "INSUFFICIENT_FUNDS";
+    public static final String STATUS_SUCCESS = "EXITO";
+    public static final String STATUS_FAILED = "FALLO";
+    public static final String STATUS_INSUFFICIENT_FUNDS = "SALDO_INSUFICIENTE";
 }
